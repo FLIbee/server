@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NETFETCH — Web Intelligence Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Design Tokens ──────────────────────────────────────────── */
+    :root {
+      --bg-void:    #080b0f;
+      --bg-deep:    #0d1117;
+      --bg-panel:   #111820;
+      --bg-card:    #161e28;
+      --bg-hover:   #1c2736;
+      --line:       #1f2d3d;
+      --line-glow:  #1a4a6e;
+
+      --text-primary:   #e2eaf5;
+      --text-secondary: #7a96b0;
+      --text-muted:     #3d5268;
+      --text-accent:    #38bdf8;
+      --text-green:     #34d399;
+      --text-amber:     #fbbf24;
+      --text-red:       #f87171;
+
+      --accent:         #0ea5e9;
+      --accent-glow:    rgba(14, 165, 233, 0.15);
+      --accent-glow-lg: rgba(14, 165, 233, 0.06);
+
+      --green:          #10b981;
+      --green-glow:     rgba(16, 185, 129, 0.12);
+
+      --radius-sm: 3px;
+      --radius:    6px;
+      --radius-lg: 10px;
+
+      --font-mono: 'Space Mono', 'Courier New', monospace;
+      --font-ui:   'Inter', system-ui, sans-serif;
+
+      --transition: 160ms ease;
+    }
+
+    /* ─── Reset ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      min-height: 100%;
+      background: var(--bg-void);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Scrollbar ──────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--line-glow); border-radius: 99px; }
+
+    /* ─── Layout ─────────────────────────────────────────────────── */
+    .app-shell {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    /* ─── Top Nav ─────────────────────────────────────────────────  */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 52px;
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.05em;
+      color: var(--text-primary);
+    }
+    .topbar-logo .logo-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--accent), #0284c7);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+    .topbar-logo .logo-tag {
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-left: -4px;
+    }
+    .topbar-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulse 2.4s ease infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ─── Main Body ───────────────────────────────────────────────── */
+    .main-body {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      height: calc(100vh - 52px);
+    }
+
+    /* ─── Left Sidebar ────────────────────────────────────────────── */
+    .sidebar {
+      background: var(--bg-deep);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-section {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .sidebar-section:last-child { border-bottom: none; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    /* ─── Input Group ────────────────────────────────────────────── */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .input-row {
+      display: flex;
+      gap: 6px;
+    }
+    .keyword-input {
+      flex: 1;
+      background: var(--bg-void);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .keyword-input::placeholder { color: var(--text-muted); }
+    .keyword-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      padding: 9px 16px;
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #38bdf8;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .btn-ghost {
+      padding: 7px 12px;
+      background: transparent;
+      border-color: var(--line);
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+    .btn-ghost:hover {
+      border-color: var(--accent);
+      color: var(--text-accent);
+      background: var(--accent-glow);
+    }
+
+    /* ─── Keyword chips ──────────────────────────────────────────── */
+    .keyword-hints {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .keyword-chip {
+      padding: 3px 8px;
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .keyword-chip:hover {
+      border-color: var(--accent);
+      color: var(--text-accent);
+      background: var(--accent-glow);
+    }
+
+    /* ─── URL List ───────────────────────────────────────────────── */
+    .url-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .url-item {
+      display: flex;
+      flex-direction: column;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .url-item::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--accent);
+      transform: scaleY(0);
+      transition: transform var(--transition);
+      border-radius: 0 1px 1px 0;
+    }
+    .url-item:hover { border-color: var(--line-glow); background: var(--bg-hover); }
+    .url-item:hover::before { transform: scaleY(1); }
+    .url-item.active {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+    .url-item.active::before { transform: scaleY(1); }
+
+    .url-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .url-addr {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    /* ─── Right Panel ─────────────────────────────────────────────── */
+    .content-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-panel);
+    }
+
+    /* ─── Panel Tabs ──────────────────────────────────────────────── */
+    .panel-tabs {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0 20px;
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--line);
+      height: 44px;
+    }
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 16px;
+      height: 44px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all var(--transition);
+    }
+    .tab:hover { color: var(--text-secondary); }
+    .tab.active { color: var(--text-accent); border-bottom-color: var(--accent); }
+    .tab-badge {
+      background: var(--bg-card);
+      color: var(--text-muted);
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 99px;
+      font-weight: 400;
+    }
+    .tab.active .tab-badge {
+      background: var(--accent-glow);
+      color: var(--text-accent);
+    }
+
+    /* ─── Download Progress Bar ───────────────────────────────────── */
+    .progress-bar-outer {
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--line);
+      padding: 12px 20px;
+      display: none;
+    }
+    .progress-bar-outer.visible { display: block; }
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 7px;
+    }
+    .progress-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    .progress-stats {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .progress-track {
+      height: 3px;
+      background: var(--bg-card);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--text-green));
+      border-radius: 99px;
+      transition: width 200ms ease;
+      width: 0%;
+      position: relative;
+    }
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 20px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+    }
+    .progress-indeterminate .progress-fill {
+      width: 40%;
+      animation: indeterminate 1.2s ease infinite;
+    }
+    @keyframes indeterminate {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
+    }
+
+    /* ─── Tab Content ─────────────────────────────────────────────── */
+    .tab-content { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+    .tab-content.active { display: flex; }
+
+    /* ─── Viewer ──────────────────────────────────────────────────── */
+    .viewer-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--bg-deep);
+    }
+    .viewer-url-badge {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg-void);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .viewer-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    /* ─── Empty State ─────────────────────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 12px;
+      color: var(--text-muted);
+      padding: 40px;
+      text-align: center;
+    }
+    .empty-icon {
+      font-size: 36px;
+      opacity: 0.35;
+      margin-bottom: 4px;
+    }
+    .empty-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+    }
+    .empty-desc {
+      font-size: 12px;
+      max-width: 280px;
+      line-height: 1.7;
+    }
+
+    /* ─── Saved Items List ────────────────────────────────────────── */
+    .saved-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .saved-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .saved-item:hover { border-color: var(--line-glow); background: var(--bg-hover); }
+    .saved-item.active { border-color: var(--accent); background: var(--accent-glow-lg); }
+    .saved-item-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--bg-panel);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      border: 1px solid var(--line);
+    }
+    .saved-item-info { flex: 1; min-width: 0; }
+    .saved-item-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .saved-item-meta {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      display: flex;
+      gap: 10px;
+    }
+    .saved-item-delete {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 2px 4px;
+      border-radius: var(--radius-sm);
+      transition: all var(--transition);
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .saved-item-delete:hover { color: var(--text-red); background: rgba(248,113,113,0.1); }
+
+    /* ─── Raw HTML Frame ──────────────────────────────────────────── */
+    .content-frame {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #content-iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background: #fff;
+    }
+
+    /* ─── Source View ─────────────────────────────────────────────── */
+    .source-view {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .source-code {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.75;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      word-break: break-all;
+      background: var(--bg-void);
+    }
+
+    /* ─── Render Mode Toggle ──────────────────────────────────────── */
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+    }
+    .view-btn {
+      padding: 5px 10px;
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .view-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .view-btn:hover:not(.active) { border-color: var(--accent); color: var(--text-accent); }
+
+    /* ─── Toast / Notification ────────────────────────────────────── */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 999;
+    }
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      border: 1px solid;
+      animation: toastIn 200ms ease forwards;
+      max-width: 320px;
+      backdrop-filter: blur(8px);
+    }
+    .toast.info    { background: rgba(14,165,233,0.12); border-color: rgba(14,165,233,0.3); color: var(--text-accent); }
+    .toast.success { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); color: var(--text-green); }
+    .toast.error   { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.3); color: var(--text-red); }
+    .toast.warn    { background: rgba(251,191,36,0.12); border-color: rgba(251,191,36,0.3); color: var(--text-amber); }
+    @keyframes toastIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+
+    /* ─── Offline Banner ──────────────────────────────────────────── */
+    .offline-banner {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      background: rgba(251,191,36,0.08);
+      border-bottom: 1px solid rgba(251,191,36,0.25);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-amber);
+    }
+    .offline-banner.visible { display: flex; }
+
+    /* ─── Responsive ──────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .main-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      .sidebar { max-height: 50vh; border-right: none; border-bottom: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ─── Top Bar ──────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="topbar-logo">
+      <div class="logo-icon">⌬</div>
+      <div>
+        <div>NETFETCH</div>
+        <div class="logo-tag">Web Intelligence Terminal</div>
+      </div>
+    </div>
+    <div class="topbar-status">
+      <div class="status-dot" id="server-dot"></div>
+      <span id="server-label">ONLINE</span>
+    </div>
+  </header>
+
+  <!-- ─── Offline Banner ─────────────────────────────────────────── -->
+  <div class="offline-banner" id="offline-banner">
+    ⚡ OFFLINE MODE — Displaying cached content from LocalStorage
+  </div>
+
+  <!-- ─── Main Body ──────────────────────────────────────────────── -->
+  <div class="main-body">
+
+    <!-- ─── Sidebar ──────────────────────────────────────────────── -->
+    <aside class="sidebar">
+
+      <!-- Search -->
+      <div class="sidebar-section">
+        <div class="section-label">Query</div>
+        <div class="input-group">
+          <div class="input-row">
+            <input
+              type="text"
+              class="keyword-input"
+              id="keyword-input"
+              placeholder="keyword..."
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button class="btn btn-primary" id="search-btn" onclick="searchKeyword()">RUN</button>
+          </div>
+          <div class="keyword-hints" id="keyword-chips"></div>
+        </div>
+      </div>
+
+      <!-- URL Results -->
+      <div class="sidebar-section" id="url-section" style="display:none">
+        <div class="section-label">Sources</div>
+        <div class="url-list" id="url-list"></div>
+      </div>
+
+      <!-- Empty Placeholder -->
+      <div class="sidebar-section" id="sidebar-placeholder">
+        <div style="text-align:center; color:var(--text-muted); font-family:var(--font-mono); font-size:11px; padding: 20px 0;">
+          Enter a keyword to<br>discover sources
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ─── Content Panel ─────────────────────────────────────────── -->
+    <main class="content-panel">
+
+      <!-- Download Progress -->
+      <div class="progress-bar-outer" id="progress-outer">
+        <div class="progress-info">
+          <span class="progress-label" id="progress-label">Fetching...</span>
+          <span class="progress-stats" id="progress-stats"></span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="panel-tabs">
+        <div class="tab active" data-tab="viewer" onclick="switchTab('viewer')">
+          Preview
+          <span class="tab-badge" id="tab-viewer-badge">—</span>
+        </div>
+        <div class="tab" data-tab="source" onclick="switchTab('source')">
+          Source
+        </div>
+        <div class="tab" data-tab="saved" onclick="switchTab('saved')">
+          Saved
+          <span class="tab-badge" id="tab-saved-badge">0</span>
+        </div>
+      </div>
+
+      <!-- Tab: Viewer -->
+      <div class="tab-content active" id="tab-viewer">
+        <div class="empty-state" id="viewer-empty">
+          <div class="empty-icon">⌁</div>
+          <div class="empty-title">No Signal</div>
+          <div class="empty-desc">Select a keyword, pick a source URL, then hit FETCH to stream content.</div>
+        </div>
+        <div class="content-frame" id="viewer-frame" style="display:none">
+          <div class="viewer-toolbar">
+            <div class="viewer-url-badge" id="viewer-url-badge">—</div>
+            <div class="view-toggle">
+              <button class="view-btn active" id="view-rendered" onclick="setViewMode('rendered')">Rendered</button>
+              <button class="view-btn" id="view-text" onclick="setViewMode('text')">Text</button>
+            </div>
+            <button class="btn btn-ghost" onclick="saveCurrentPage()">SAVE</button>
+          </div>
+          <iframe id="content-iframe" sandbox="allow-same-origin allow-scripts" title="Fetched Content"></iframe>
+          <div class="source-view" id="text-view" style="display:none">
+            <pre class="source-code" id="text-content"></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Source -->
+      <div class="tab-content" id="tab-source">
+        <div class="empty-state" id="source-empty">
+          <div class="empty-icon">⌘</div>
+          <div class="empty-title">No Source</div>
+          <div class="empty-desc">Fetch a URL to inspect its raw HTML.</div>
+        </div>
+        <div class="source-view" id="source-view" style="display:none">
+          <pre class="source-code" id="source-code-content"></pre>
+        </div>
+      </div>
+
+      <!-- Tab: Saved -->
+      <div class="tab-content" id="tab-saved">
+        <div class="saved-list" id="saved-list"></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ─── Configuration ─────────────────────────────────────────────────────────
+const API_BASE = window.location.origin;
+
+// ─── State ─────────────────────────────────────────────────────────────────
+const state = {
+  currentUrls: [],
+  selectedUrl: null,
+  currentHtml: '',
+  currentTitle: '',
+  viewMode: 'rendered',
+  activeTab: 'viewer',
+  isOnline: navigator.onLine,
+};
+
+// ─── Saved Pages (LocalStorage) ────────────────────────────────────────────
+const STORAGE_KEY = 'netfetch_saved_pages';
+
+function getSavedPages() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function setSavedPages(pages) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
+  } catch (e) {
+    toast('Storage full — delete some saved pages', 'warn');
+  }
+}
+
+// ─── Toast ─────────────────────────────────────────────────────────────────
+function toast(msg, type = 'info', duration = 3500) {
+  const icons = { info: '◈', success: '◉', error: '✗', warn: '⚠' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type] || '◈'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), duration);
+}
+
+// ─── Offline Detection ──────────────────────────────────────────────────────
+window.addEventListener('online',  () => { state.isOnline = true;  updateOfflineBanner(); });
+window.addEventListener('offline', () => { state.isOnline = false; updateOfflineBanner(); });
+
+function updateOfflineBanner() {
+  document.getElementById('offline-banner').classList.toggle('visible', !state.isOnline);
+  document.getElementById('server-dot').style.background = state.isOnline ? 'var(--green)' : 'var(--text-red)';
+  document.getElementById('server-label').textContent = state.isOnline ? 'ONLINE' : 'OFFLINE';
+  document.getElementById('server-dot').style.boxShadow = state.isOnline
+    ? '0 0 6px var(--green)' : '0 0 6px var(--text-red)';
+}
+
+// ─── Keyword Search ─────────────────────────────────────────────────────────
+async function searchKeyword() {
+  if (!state.isOnline) {
+    toast('Offline — cannot query server', 'warn');
+    return;
+  }
+
+  const input = document.getElementById('keyword-input');
+  const keyword = input.value.trim();
+  if (!keyword) {
+    toast('Enter a keyword first', 'warn');
+    input.focus();
+    return;
+  }
+
+  const btn = document.getElementById('search-btn');
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/urls`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyword }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      toast(data.error || 'Unknown error', 'error');
+      return;
+    }
+
+    state.currentUrls = data.urls;
+    state.selectedUrl = null;
+    renderUrlList(data.urls);
+    toast(`Found ${data.urls.length} source(s) for "${keyword}"`, 'success');
+  } catch (err) {
+    toast(`Network error: ${err.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'RUN';
+  }
+}
+
+// Enter key on input
+document.getElementById('keyword-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') searchKeyword();
+});
+
+// ─── Render URL List ────────────────────────────────────────────────────────
+function renderUrlList(urls) {
+  const list = document.getElementById('url-list');
+  const section = document.getElementById('url-section');
+  const placeholder = document.getElementById('sidebar-placeholder');
+
+  list.innerHTML = '';
+  section.style.display = 'flex';
+  section.style.flexDirection = 'column';
+  placeholder.style.display = 'none';
+
+  urls.forEach((item, idx) => {
+    const el = document.createElement('div');
+    el.className = 'url-item';
+    el.dataset.idx = idx;
+    el.innerHTML = `
+      <div class="url-title">${escapeHtml(item.title)}</div>
+      <div class="url-addr">${escapeHtml(item.url)}</div>
+    `;
+    el.addEventListener('click', () => selectUrl(idx));
+    list.appendChild(el);
+  });
+}
+
+// ─── Select URL + Fetch ─────────────────────────────────────────────────────
+function selectUrl(idx) {
+  const items = document.querySelectorAll('.url-item');
+  items.forEach(el => el.classList.remove('active'));
+  items[idx]?.classList.add('active');
+
+  const chosen = state.currentUrls[idx];
+  state.selectedUrl = chosen;
+  fetchUrl(chosen.url, chosen.title);
+}
+
+// ─── Stream Fetch via SSE ───────────────────────────────────────────────────
+function fetchUrl(url, title) {
+  const progressOuter = document.getElementById('progress-outer');
+  const progressFill  = document.getElementById('progress-fill');
+  const progressLabel = document.getElementById('progress-label');
+  const progressStats = document.getElementById('progress-stats');
+
+  progressOuter.classList.add('visible');
+  progressOuter.classList.add('progress-indeterminate');
+  progressFill.style.width = '0%';
+  progressLabel.textContent = `Connecting to ${new URL(url).hostname}…`;
+  progressStats.textContent = '';
+
+  document.getElementById('viewer-empty').style.display = 'none';
+  document.getElementById('viewer-frame').style.display = 'none';
+  document.getElementById('source-empty').style.display = 'none';
+  document.getElementById('source-view').style.display  = 'none';
+  document.getElementById('viewer-url-badge').textContent = url;
+  document.getElementById('tab-viewer-badge').textContent = '…';
+
+  const evtSource = new EventSource(`${API_BASE}/api/fetch?url=${encodeURIComponent(url)}`);
+
+  evtSource.addEventListener('start', (e) => {
+    const d = JSON.parse(e.data);
+    progressLabel.textContent = `Connecting to ${new URL(d.url).hostname}…`;
+    progressOuter.classList.remove('progress-indeterminate');
+  });
+
+  evtSource.addEventListener('meta', (e) => {
+    const d = JSON.parse(e.data);
+    progressLabel.textContent = `Downloading${d.totalSize ? ` (${formatBytes(d.totalSize)})` : ''}…`;
+  });
+
+  evtSource.addEventListener('progress', (e) => {
+    const d = JSON.parse(e.data);
+    const pct = d.progress ?? 0;
+    progressFill.style.width = `${Math.min(pct, 100)}%`;
+    progressStats.textContent = `${formatBytes(d.received)}${d.total ? ` / ${formatBytes(d.total)}` : ''}`;
+  });
+
+  evtSource.addEventListener('redirect', (e) => {
+    const d = JSON.parse(e.data);
+    toast(`Redirected → ${d.location} (${d.status})`, 'info');
+    evtSource.close();
+    finishProgress();
+  });
+
+  evtSource.addEventListener('complete', (e) => {
+    const d = JSON.parse(e.data);
+    evtSource.close();
+    progressFill.style.width = '100%';
+    progressLabel.textContent = d.truncated
+      ? `⚠ Truncated at ${formatBytes(d.truncatedAt)} (page was larger)`
+      : `Completed — ${formatBytes(d.size)}`;
+
+    state.currentHtml  = d.content;
+    state.currentTitle = title;
+
+    renderContent(d.content, url);
+    document.getElementById('tab-viewer-badge').textContent = formatBytes(d.size);
+    if (d.truncated) toast(`Content truncated at 512 KB`, 'warn');
+    else toast(`Loaded: ${formatBytes(d.size)}`, 'success');
+
+    setTimeout(finishProgress, 1500);
+  });
+
+  evtSource.addEventListener('error', (e) => {
+    evtSource.close();
+    let msg = 'Fetch failed';
+    try { msg = JSON.parse(e.data).message; } catch {}
+    toast(msg, 'error');
+    progressLabel.textContent = `Error: ${msg}`;
+    progressFill.style.width = '0%';
+    document.getElementById('viewer-empty').style.display = 'flex';
+    document.getElementById('source-empty').style.display = 'flex';
+    document.getElementById('tab-viewer-badge').textContent = '✗';
+    setTimeout(finishProgress, 2000);
+  });
+
+  evtSource.onerror = () => {
+    evtSource.close();
+    toast('Connection to server lost', 'error');
+    finishProgress();
+  };
+}
+
+function finishProgress() {
+  const progressOuter = document.getElementById('progress-outer');
+  progressOuter.classList.remove('visible', 'progress-indeterminate');
+}
+
+// ─── Render Content ─────────────────────────────────────────────────────────
+function renderContent(html, url) {
+  // Viewer iframe
+  const iframe = document.getElementById('content-iframe');
+  const blob = new Blob([html], { type: 'text/html' });
+  const blobUrl = URL.createObjectURL(blob);
+  iframe.src = blobUrl;
+  iframe.style.display = 'block';
+
+  // Text view
+  document.getElementById('text-content').textContent = html;
+
+  // Source tab
+  document.getElementById('source-view').style.display = 'flex';
+  document.getElementById('source-empty').style.display = 'none';
+  document.getElementById('source-code-content').textContent = html;
+
+  // Show viewer frame
+  document.getElementById('viewer-frame').style.display = 'flex';
+  setViewMode(state.viewMode);
+}
+
+// ─── View Mode ──────────────────────────────────────────────────────────────
+function setViewMode(mode) {
+  state.viewMode = mode;
+  const iframe    = document.getElementById('content-iframe');
+  const textView  = document.getElementById('text-view');
+  const btnR      = document.getElementById('view-rendered');
+  const btnT      = document.getElementById('view-text');
+
+  if (mode === 'rendered') {
+    iframe.style.display   = 'block';
+    textView.style.display = 'none';
+    btnR.classList.add('active');
+    btnT.classList.remove('active');
+  } else {
+    iframe.style.display   = 'none';
+    textView.style.display = 'flex';
+    btnT.classList.add('active');
+    btnR.classList.remove('active');
+  }
+}
+
+// ─── Tab Switching ──────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(el => {
+    el.classList.toggle('active', el.id === `tab-${tab}`);
+  });
+  state.activeTab = tab;
+
+  if (tab === 'saved') renderSavedList();
+}
+
+// ─── Save Page ──────────────────────────────────────────────────────────────
+function saveCurrentPage() {
+  if (!state.currentHtml) { toast('Nothing to save yet', 'warn'); return; }
+
+  const pages = getSavedPages();
+  const url = state.selectedUrl?.url || '—';
+  const title = state.currentTitle || 'Untitled';
+  const now = new Date();
+
+  // Prevent duplicate saves
+  if (pages.some(p => p.url === url)) {
+    toast('Already saved', 'info'); return;
+  }
+
+  pages.unshift({
+    id: Date.now(),
+    url,
+    title,
+    savedAt: now.toISOString(),
+    size: new Blob([state.currentHtml]).size,
+    content: state.currentHtml,
+  });
+
+  setSavedPages(pages);
+  updateSavedBadge();
+  toast(`Saved: ${title}`, 'success');
+  if (state.activeTab === 'saved') renderSavedList();
+}
+
+// ─── Render Saved List ──────────────────────────────────────────────────────
+function renderSavedList() {
+  const pages = getSavedPages();
+  const list = document.getElementById('saved-list');
+  list.innerHTML = '';
+
+  if (pages.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">☁</div>
+        <div class="empty-title">Nothing Saved</div>
+        <div class="empty-desc">Fetch a page and press SAVE to store it offline in LocalStorage.</div>
+      </div>
+    `;
+    return;
+  }
+
+  pages.forEach((page) => {
+    const el = document.createElement('div');
+    el.className = 'saved-item';
+    el.innerHTML = `
+      <div class="saved-item-icon">📄</div>
+      <div class="saved-item-info">
+        <div class="saved-item-title">${escapeHtml(page.title)}</div>
+        <div class="saved-item-meta">
+          <span>${formatBytes(page.size)}</span>
+          <span>${formatDate(page.savedAt)}</span>
+        </div>
+      </div>
+      <button class="saved-item-delete" title="Delete" onclick="deleteSaved(${page.id}, event)">✕</button>
+    `;
+    el.addEventListener('click', () => loadSavedPage(page));
+    list.appendChild(el);
+  });
+}
+
+function loadSavedPage(page) {
+  state.currentHtml  = page.content;
+  state.currentTitle = page.title;
+  renderContent(page.content, page.url);
+  document.getElementById('viewer-url-badge').textContent = page.url;
+  document.getElementById('tab-viewer-badge').textContent = formatBytes(page.size);
+  switchTab('viewer');
+  toast(`Loaded from cache: ${page.title}`, 'info');
+}
+
+function deleteSaved(id, event) {
+  event.stopPropagation();
+  const pages = getSavedPages().filter(p => p.id !== id);
+  setSavedPages(pages);
+  updateSavedBadge();
+  renderSavedList();
+  toast('Deleted', 'info');
+}
+
+function updateSavedBadge() {
+  const pages = getSavedPages();
+  document.getElementById('tab-saved-badge').textContent = pages.length || '0';
+}
+
+// ─── Load Available Keywords ────────────────────────────────────────────────
+async function loadKeywords() {
+  try {
+    const res = await fetch(`${API_BASE}/api/keywords`);
+    const data = await res.json();
+    const container = document.getElementById('keyword-chips');
+    data.keywords.forEach(kw => {
+      const chip = document.createElement('div');
+      chip.className = 'keyword-chip';
+      chip.textContent = kw;
+      chip.addEventListener('click', () => {
+        document.getElementById('keyword-input').value = kw;
+        searchKeyword();
+      });
+      container.appendChild(chip);
+    });
+  } catch {
+    // Server may not be reachable — show offline mode
+  }
+}
+
+// ─── Utilities ──────────────────────────────────────────────────────────────
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit',
+    hour: '2-digit', minute: '2-digit' });
+}
+
+// ─── Init ───────────────────────────────────────────────────────────────────
+updateOfflineBanner();
+updateSavedBadge();
+renderSavedList();
+loadKeywords();
+</script>
+</body>
+</html>
